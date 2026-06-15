@@ -315,15 +315,17 @@ if uploaded_file is not None:
                         </html>
                         """
                         
-                        # Generate PDF bytes
+                        # Generate PDF bytes using xhtml2pdf (Pure Python, no OS dependencies!)
                         try:
-                            # Automatically find wkhtmltopdf on Windows local test environment
-                            pdfkit_config = None
-                            local_path = r"C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe"
-                            if os.path.exists(local_path):
-                                pdfkit_config = pdfkit.configuration(wkhtmltopdf=local_path)
+                            from xhtml2pdf import pisa
+                            pdf_out = io.BytesIO()
+                            pisa_status = pisa.CreatePDF(io.StringIO(html_content), dest=pdf_out)
+                            
+                            if pisa_status.err:
+                                st.error(f"Error generating PDF for {agent}")
+                                st.stop()
                                 
-                            pdf_bytes = pdfkit.from_string(html_content, False, options=pdf_options, configuration=pdfkit_config)
+                            pdf_bytes = pdf_out.getvalue()
                             safe_agent_name = str(agent).replace("/", "_").replace("\\", "_").strip()
                             if not safe_agent_name:
                                 safe_agent_name = "UNKNOWN_AGENT"
